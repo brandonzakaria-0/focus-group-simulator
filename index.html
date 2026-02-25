@@ -897,22 +897,6 @@ Creates content across multiple platforms. Cares about self-expression, speed, a
 
         async function generateDebate(productIdea, personas) {
           try {
-            if (typeof CONFIG_KEYS === "undefined" || !CONFIG_KEYS || !CONFIG_KEYS.OPENAI_API_KEY) {
-              setStatus(
-                "API key not configured. Open config-keys.js and paste your OpenAI API key.",
-                "status-error"
-              );
-              return;
-            }
-
-            if (CONFIG_KEYS.OPENAI_API_KEY.includes("paste-your-openai-api-key-here")) {
-              setStatus(
-                "API key not configured. Open config-keys.js and paste your OpenAI API key.",
-                "status-error"
-              );
-              return;
-            }
-
             runBtn.disabled = true;
             setStatus("Generating debate... this takes 15-30 seconds", "status-loading");
 
@@ -951,7 +935,6 @@ Creates content across multiple platforms. Cares about self-expression, speed, a
                 method: "POST",
                 headers: {
                   "Content-Type": "application/json",
-                  Authorization: "Bearer " + CONFIG_KEYS.OPENAI_API_KEY,
                 },
                 body: JSON.stringify(body),
               });
