@@ -1,0 +1,1307 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- Config scripts (API model + keys) -->
+    <script src="config.js"></script>
+    <script src="config-keys.js"></script>
+
+    <title>Focus Group Simulator</title>
+
+    <style>
+      :root {
+        --bg-page: #f3f4f6;
+        --bg-card: #ffffff;
+        --border-subtle: #e5e7eb;
+        --text-main: #111827;
+        --text-muted: #6b7280;
+        --accent: #2563eb;
+        --accent-soft: #dbeafe;
+        --shadow-soft: 0 10px 25px rgba(15, 23, 42, 0.08);
+        --radius-lg: 14px;
+        --radius-md: 10px;
+        --radius-pill: 999px;
+        --transition-fast: 0.18s ease-out;
+        --transition-med: 0.25s ease;
+
+        --persona-1: #2563eb;
+        --persona-2: #16a34a;
+        --persona-3: #9333ea;
+        --persona-4: #f97316;
+        --persona-5: #ec4899;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: radial-gradient(circle at top left, #eef2ff 0, #f9fafb 45%, #f3f4f6 100%);
+        color: var(--text-main);
+      }
+
+      body {
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+      }
+
+      .app-shell {
+        width: 100%;
+        max-width: 1200px;
+        padding: 24px 16px 32px;
+      }
+
+      header.app-header {
+        margin-bottom: 24px;
+        text-align: left;
+      }
+
+      .title-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 4px 10px;
+        border-radius: var(--radius-pill);
+        background: rgba(37, 99, 235, 0.06);
+        color: #1d4ed8;
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        margin-bottom: 10px;
+      }
+
+      .app-title {
+        font-size: 28px;
+        letter-spacing: -0.03em;
+        margin: 0 0 6px;
+      }
+
+      .app-subtitle {
+        margin: 0;
+        font-size: 14px;
+        color: var(--text-muted);
+        max-width: 480px;
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: minmax(0, 2.3fr) minmax(260px, 1fr);
+        gap: 20px;
+        align-items: flex-start;
+      }
+
+      .main-column {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .card {
+        background: var(--bg-card);
+        border-radius: var(--radius-lg);
+        padding: 18px 18px 16px;
+        box-shadow: var(--shadow-soft);
+        border: 1px solid rgba(148, 163, 184, 0.15);
+      }
+
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+        gap: 8px;
+      }
+
+      .card-title {
+        font-size: 15px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .card-title span.badge {
+        font-size: 11px;
+        padding: 2px 8px;
+        border-radius: var(--radius-pill);
+        background: #eff6ff;
+        color: #1d4ed8;
+        font-weight: 500;
+      }
+
+      .card-subtitle {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-top: 3px;
+      }
+
+      /* Input section */
+      #input-section label {
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--text-main);
+        display: block;
+        margin-bottom: 6px;
+      }
+
+      #idea-input {
+        width: 100%;
+        min-height: 120px;
+        resize: vertical;
+        padding: 10px 11px;
+        border-radius: 12px;
+        border: 1px solid var(--border-subtle);
+        font: inherit;
+        line-height: 1.4;
+        color: var(--text-main);
+        background: #f9fafb;
+        outline: none;
+        transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
+      }
+
+      #idea-input::placeholder {
+        color: #9ca3af;
+      }
+
+      #idea-input:focus {
+        border-color: rgba(37, 99, 235, 0.75);
+        box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.25), 0 10px 22px rgba(15, 23, 42, 0.12);
+        background: #ffffff;
+      }
+
+      .input-footer {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+        margin-top: 10px;
+      }
+
+      #run-btn {
+        border: none;
+        border-radius: 999px;
+        padding: 10px 18px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        background: linear-gradient(135deg, #2563eb, #4f46e5);
+        color: #ffffff;
+        box-shadow: 0 12px 22px rgba(37, 99, 235, 0.35);
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: transform var(--transition-fast), box-shadow var(--transition-fast), filter var(--transition-fast);
+      }
+
+      #run-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 16px 30px rgba(37, 99, 235, 0.4);
+        filter: brightness(1.03);
+      }
+
+      #run-btn:active {
+        transform: translateY(0);
+        box-shadow: 0 8px 18px rgba(37, 99, 235, 0.45);
+      }
+
+      #mic-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 999px;
+        border: 1px solid #e5e7eb;
+        background: #ffffff;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: #4b5563;
+        box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
+        transition: background var(--transition-fast), color var(--transition-fast),
+          transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
+      }
+
+      #mic-btn:hover {
+        background: #f3f4ff;
+        color: #1d4ed8;
+        box-shadow: 0 8px 16px rgba(37, 99, 235, 0.25);
+        transform: translateY(-0.5px);
+      }
+
+      #mic-btn .mic-icon {
+        font-size: 16px;
+      }
+
+      #mic-btn.mic-active {
+        background: #dc2626;
+        color: #ffffff;
+        border-color: #fecaca;
+        animation: mic-pulse 1.2s infinite;
+        box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.35);
+      }
+
+      @keyframes mic-pulse {
+        0% {
+          box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.35);
+          transform: scale(1);
+        }
+        70% {
+          box-shadow: 0 0 0 10px rgba(220, 38, 38, 0);
+          transform: scale(1.04);
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
+          transform: scale(1);
+        }
+      }
+
+      #status-text {
+        font-size: 12px;
+        min-height: 1.1em;
+        color: var(--text-muted);
+        transition: color var(--transition-fast);
+      }
+
+      .status-loading {
+        color: #0369a1;
+      }
+
+      .status-error {
+        color: #b91c1c;
+      }
+
+      .status-success {
+        color: #15803d;
+      }
+
+      /* Persona panel */
+      #persona-panel {
+        padding-top: 4px;
+      }
+
+      .persona-toggle {
+        width: 100%;
+        padding: 8px 10px;
+        border-radius: 999px;
+        border: none;
+        background: #f3f4ff;
+        color: #1f2933;
+        font-size: 12px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: space-between;
+        cursor: pointer;
+        transition: background var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
+      }
+
+      .persona-toggle span.label {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .persona-toggle:hover {
+        background: #e5e7ff;
+        box-shadow: 0 7px 15px rgba(148, 163, 184, 0.35);
+        transform: translateY(-0.5px);
+      }
+
+      .persona-toggle-icon {
+        transition: transform var(--transition-med);
+      }
+
+      #persona-panel.collapsed .persona-toggle-icon {
+        transform: rotate(-90deg);
+      }
+
+      .persona-panel-body {
+        overflow: hidden;
+        margin-top: 10px;
+        transition: max-height 0.3s ease, opacity 0.25s ease, transform 0.3s ease;
+        max-height: 0;
+        opacity: 0;
+        transform: translateY(-4px);
+      }
+
+      #persona-panel.expanded .persona-panel-body {
+        max-height: 800px;
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      .persona-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 10px;
+      }
+
+      .persona-card {
+        border-radius: var(--radius-md);
+        border: 1px solid var(--border-subtle);
+        padding: 10px 10px 9px;
+        background: #f9fafb;
+      }
+
+      .persona-label {
+        font-size: 12px;
+        font-weight: 500;
+        margin-bottom: 4px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .persona-label span.dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 999px;
+      }
+
+      .persona-input,
+      .persona-textarea {
+        width: 100%;
+        border-radius: 9px;
+        border: 1px solid rgba(148, 163, 184, 0.8);
+        padding: 5px 7px;
+        font: inherit;
+        font-size: 12px;
+        background: rgba(255, 255, 255, 0.95);
+        resize: none;
+        outline: none;
+        transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
+      }
+
+      .persona-input {
+        margin-bottom: 4px;
+      }
+
+      .persona-input:focus,
+      .persona-textarea:focus {
+        border-color: rgba(37, 99, 235, 0.85);
+        box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.18);
+        background: #ffffff;
+      }
+
+      .persona-note {
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-top: 8px;
+      }
+
+      /* Output & synthesis sections */
+      .section-heading {
+        font-size: 15px;
+        font-weight: 600;
+        margin: 0 0 10px;
+      }
+
+      .hidden {
+        max-height: 0 !important;
+        opacity: 0;
+        overflow: hidden;
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+        margin-top: 0 !important;
+        margin-bottom: 0 !important;
+        border-width: 0 !important;
+      }
+
+      #output-section,
+      #synthesis-section {
+        transition: all 0.32s ease;
+      }
+
+      #debate-container {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .message {
+        border-radius: 11px;
+        padding: 8px 10px;
+        background: #f9fafb;
+        border-left: 3px solid #e5e7eb;
+        box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
+      }
+
+      .message-header {
+        font-size: 12px;
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+
+      .message-body {
+        font-size: 13px;
+        color: #111827;
+      }
+
+      .persona-1 .message-header {
+        color: var(--persona-1);
+      }
+
+      .persona-1 {
+        border-left-color: rgba(37, 99, 235, 0.9);
+      }
+
+      .persona-2 .message-header {
+        color: var(--persona-2);
+      }
+
+      .persona-2 {
+        border-left-color: rgba(22, 163, 74, 0.9);
+      }
+
+      .persona-3 .message-header {
+        color: var(--persona-3);
+      }
+
+      .persona-3 {
+        border-left-color: rgba(147, 51, 234, 0.9);
+      }
+
+      .persona-4 .message-header {
+        color: var(--persona-4);
+      }
+
+      .persona-4 {
+        border-left-color: rgba(249, 115, 22, 0.9);
+      }
+
+      .persona-5 .message-header {
+        color: var(--persona-5);
+      }
+
+      .persona-5 {
+        border-left-color: rgba(236, 72, 153, 0.9);
+      }
+
+      #synthesis-container {
+        font-size: 13px;
+        color: #111827;
+        line-height: 1.5;
+      }
+
+      /* History sidebar */
+      #history-sidebar {
+        position: sticky;
+        top: 20px;
+        align-self: flex-start;
+      }
+
+      #history-sidebar .card {
+        padding-bottom: 14px;
+      }
+
+      #history-list {
+        list-style: none;
+        padding: 0;
+        margin: 4px 0 10px;
+        max-height: 320px;
+        overflow-y: auto;
+        font-size: 12px;
+        color: var(--text-muted);
+      }
+
+      #history-list li {
+        padding: 6px 8px;
+        border-radius: 8px;
+        border: 1px dashed #e5e7eb;
+        margin-bottom: 4px;
+      }
+
+      #clear-history-btn {
+        border-radius: 999px;
+        border: 1px solid #e5e7eb;
+        padding: 6px 11px;
+        font-size: 12px;
+        background: #f9fafb;
+        cursor: pointer;
+        color: #4b5563;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
+      }
+
+      #clear-history-btn:hover {
+        background: #fee2e2;
+        border-color: #fecaca;
+        color: #b91c1c;
+        box-shadow: 0 6px 13px rgba(185, 28, 28, 0.16);
+        transform: translateY(-0.5px);
+      }
+
+      #clear-history-btn:active {
+        transform: translateY(0);
+        box-shadow: none;
+      }
+
+      @media (max-width: 900px) {
+        .layout {
+          grid-template-columns: minmax(0, 1fr);
+        }
+
+        #history-sidebar {
+          position: static;
+          order: -1;
+        }
+
+        header.app-header {
+          text-align: left;
+        }
+      }
+
+      @media (max-width: 600px) {
+        .app-shell {
+          padding-inline: 12px;
+        }
+
+        .app-title {
+          font-size: 24px;
+        }
+
+        .card {
+          padding: 14px 12px 12px;
+        }
+
+        .input-footer {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+
+        #run-btn {
+          width: 100%;
+          justify-content: center;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="app-header">
+        <div class="title-pill">
+          <span>AI Focus Group</span>
+        </div>
+        <h1 class="app-title">Focus Group Simulator</h1>
+        <p class="app-subtitle">Stress-test your product ideas with AI-powered debate.</p>
+      </header>
+
+      <div class="layout">
+        <main class="main-column">
+          <!-- Input Section -->
+          <section id="input-section" class="card" aria-labelledby="idea-label">
+            <div class="card-header">
+              <div>
+                <div class="card-title">
+                  Describe your product idea
+                  <span class="badge">Step 1</span>
+                </div>
+                <p class="card-subtitle">Set the scene for the personas. Be as concrete as possible.</p>
+              </div>
+            </div>
+
+            <label id="idea-label" for="idea-input">Product idea</label>
+            <textarea
+              id="idea-input"
+              rows="4"
+              placeholder="Describe your product idea, target users, and what makes it different..."
+            ></textarea>
+
+            <div class="input-footer">
+              <button id="run-btn" type="button">
+                <span>Run Simulation</span>
+              </button>
+              <button id="mic-btn" type="button" aria-label="Dictate product idea">
+                <span class="mic-icon">🎤</span>
+              </button>
+              <div id="status-text" aria-live="polite"></div>
+            </div>
+          </section>
+
+          <!-- Persona Panel -->
+          <section id="persona-panel" class="card collapsed" aria-label="Customize personas">
+            <div class="card-header">
+              <div>
+                <div class="card-title">
+                  Customize Personas
+                  <span class="badge">Optional</span>
+                </div>
+                <p class="card-subtitle">Tune the voices in your focus group to mirror your real customers.</p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              class="persona-toggle"
+              id="persona-toggle-btn"
+              aria-expanded="false"
+              aria-controls="persona-panel-body"
+            >
+              <span class="label">
+                <span>Show personas</span>
+              </span>
+              <span class="persona-toggle-icon">▾</span>
+            </button>
+
+            <div id="persona-panel-body" class="persona-panel-body" aria-hidden="true">
+              <div class="persona-grid">
+                <div class="persona-card" data-persona="1">
+                  <div class="persona-label">
+                    <span>Persona 1</span>
+                    <span class="dot" style="background: var(--persona-1)"></span>
+                  </div>
+                  <input class="persona-input" type="text" value="Tech Early Adopter" />
+                  <textarea class="persona-textarea" rows="2">
+Always first to try new tools and platforms. Cares about innovation, speed, and integrations, but skeptical of hype without real utility.</textarea
+                  >
+                </div>
+
+                <div class="persona-card" data-persona="2">
+                  <div class="persona-label">
+                    <span>Persona 2</span>
+                    <span class="dot" style="background: var(--persona-2)"></span>
+                  </div>
+                  <input class="persona-input" type="text" value="Budget-Conscious Parent" />
+                  <textarea class="persona-textarea" rows="2">
+Juggles family schedules and finances. Focused on value, safety, and time savings. Wary of subscriptions and hidden costs.</textarea
+                  >
+                </div>
+
+                <div class="persona-card" data-persona="3">
+                  <div class="persona-label">
+                    <span>Persona 3</span>
+                    <span class="dot" style="background: var(--persona-3)"></span>
+                  </div>
+                  <input class="persona-input" type="text" value="Enterprise Buyer" />
+                  <textarea class="persona-textarea" rows="2">
+Responsible for choosing tools for a large team. Prioritizes reliability, security, compliance, and ROI. Skeptical of tools without clear business impact.</textarea
+                  >
+                </div>
+
+                <div class="persona-card" data-persona="4">
+                  <div class="persona-label">
+                    <span>Persona 4</span>
+                    <span class="dot" style="background: var(--persona-4)"></span>
+                  </div>
+                  <input class="persona-input" type="text" value="Skeptical Senior" />
+                  <textarea class="persona-textarea" rows="2">
+Experienced and cautious with new technology. Values clarity, trust, and human support. Worried about complexity and scams.</textarea
+                  >
+                </div>
+
+                <div class="persona-card" data-persona="5">
+                  <div class="persona-label">
+                    <span>Persona 5</span>
+                    <span class="dot" style="background: var(--persona-5)"></span>
+                  </div>
+                  <input class="persona-input" type="text" value="Gen Z Creator" />
+                  <textarea class="persona-textarea" rows="2">
+Creates content across multiple platforms. Cares about self-expression, speed, and aesthetics. Skeptical of tools that feel corporate or slow.</textarea
+                  >
+                </div>
+              </div>
+
+              <p class="persona-note">Edit personas above or use defaults.</p>
+            </div>
+          </section>
+
+          <!-- Output Section -->
+          <section id="output-section" class="card hidden" aria-label="Debate transcript">
+            <h2 class="section-heading">Debate Transcript</h2>
+            <div id="debate-container">
+              <!-- Messages will appear here (group chat style) -->
+            </div>
+          </section>
+
+          <!-- Synthesis Section -->
+          <section id="synthesis-section" class="card hidden" aria-label="Key insights">
+            <h2 class="section-heading">Key Insights</h2>
+            <div id="synthesis-container"></div>
+          </section>
+        </main>
+
+        <!-- History Sidebar -->
+        <aside id="history-sidebar">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">
+                  Past Simulations
+                </div>
+                <p class="card-subtitle">Revisit previous debates and compare reactions over time.</p>
+              </div>
+            </div>
+
+            <ul id="history-list">
+              <!-- History entries will be injected here -->
+            </ul>
+
+            <button id="clear-history-btn" type="button">
+              <span>Clear History</span>
+            </button>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        const personaPanel = document.getElementById("persona-panel");
+        const personaToggleBtn = document.getElementById("persona-toggle-btn");
+        const personaPanelBody = document.getElementById("persona-panel-body");
+        const runBtn = document.getElementById("run-btn");
+        const micBtn = document.getElementById("mic-btn");
+        const ideaInput = document.getElementById("idea-input");
+        const statusText = document.getElementById("status-text");
+        const debateContainer = document.getElementById("debate-container");
+        const synthesisContainer = document.getElementById("synthesis-container");
+        const outputSection = document.getElementById("output-section");
+        const synthesisSection = document.getElementById("synthesis-section");
+        const historyList = document.getElementById("history-list");
+        const clearHistoryBtn = document.getElementById("clear-history-btn");
+
+        function setStatus(message, statusClass) {
+          statusText.textContent = message || "";
+          statusText.classList.remove("status-loading", "status-error", "status-success");
+          if (statusClass) {
+            statusText.classList.add(statusClass);
+          }
+        }
+
+        function togglePersonaPanel() {
+          const isCollapsed = personaPanel.classList.contains("collapsed");
+          if (isCollapsed) {
+            personaPanel.classList.remove("collapsed");
+            personaPanel.classList.add("expanded");
+            personaToggleBtn.setAttribute("aria-expanded", "true");
+            personaPanelBody.setAttribute("aria-hidden", "false");
+            personaToggleBtn.querySelector(".label span").textContent = "Hide personas";
+          } else {
+            personaPanel.classList.remove("expanded");
+            personaPanel.classList.add("collapsed");
+            personaToggleBtn.setAttribute("aria-expanded", "false");
+            personaPanelBody.setAttribute("aria-hidden", "true");
+            personaToggleBtn.querySelector(".label span").textContent = "Show personas";
+          }
+        }
+
+        function getPersonas() {
+          const cards = Array.from(document.querySelectorAll(".persona-card"));
+          return cards.map((card) => {
+            const nameInput = card.querySelector(".persona-input");
+            const descTextarea = card.querySelector(".persona-textarea");
+            return {
+              name: (nameInput && nameInput.value.trim()) || "Persona",
+              description: (descTextarea && descTextarea.value.trim()) || "",
+            };
+          });
+        }
+
+        function clearLoadedBadge() {
+          const badge = outputSection.querySelector(".loaded-badge");
+          if (badge && badge.parentNode) {
+            badge.parentNode.removeChild(badge);
+          }
+        }
+
+        function showLoadedBadge() {
+          const heading = outputSection.querySelector(".section-heading");
+          if (!heading) return;
+          let badge = heading.querySelector(".loaded-badge");
+          if (!badge) {
+            badge = document.createElement("span");
+            badge.className = "loaded-badge";
+            badge.textContent = "Loaded from history";
+            badge.style.marginLeft = "8px";
+            badge.style.fontSize = "11px";
+            badge.style.fontWeight = "500";
+            badge.style.color = "#4b5563";
+            badge.style.textTransform = "uppercase";
+            badge.style.letterSpacing = "0.06em";
+          }
+          heading.appendChild(badge);
+        }
+
+        function displayDebate(debateText, synthesisTextRaw) {
+          debateContainer.innerHTML = "";
+          synthesisContainer.innerHTML = "";
+          clearLoadedBadge();
+
+          if (!debateText || typeof debateText !== "string") {
+            setStatus("Unexpected response format from the model.", "status-error");
+            return;
+          }
+
+          const personaClassMap = new Map();
+          const personaClasses = ["persona-1", "persona-2", "persona-3", "persona-4", "persona-5"];
+          let nextClassIndex = 0;
+
+          const lines = debateText.split("\n");
+          lines.forEach((line) => {
+            const trimmed = line.trim();
+            if (!trimmed) return;
+
+            const match = trimmed.match(/^\[(.+?)\]:\s*(.+)$/);
+            if (!match) return;
+
+            const personaName = match[1].trim();
+            const messageText = match[2].trim();
+            if (!personaName || !messageText) return;
+
+            if (!personaClassMap.has(personaName) && nextClassIndex < personaClasses.length) {
+              personaClassMap.set(personaName, personaClasses[nextClassIndex]);
+              nextClassIndex += 1;
+            }
+
+            const bubble = document.createElement("div");
+            const assignedClass = personaClassMap.get(personaName);
+            bubble.className = ["message", assignedClass].filter(Boolean).join(" ");
+
+            const header = document.createElement("div");
+            header.className = "message-header";
+            header.textContent = personaName;
+
+            const body = document.createElement("div");
+            body.className = "message-body";
+            body.textContent = messageText;
+
+            bubble.appendChild(header);
+            bubble.appendChild(body);
+            debateContainer.appendChild(bubble);
+          });
+
+          const synthesisText = (synthesisTextRaw || "")
+            .trim()
+            .replace(/\r\n/g, "\n")
+            .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+            .replace(/\n/g, "<br>");
+
+          if (synthesisText) {
+            synthesisContainer.innerHTML = synthesisText;
+          }
+
+          outputSection.classList.remove("hidden");
+          synthesisSection.classList.remove("hidden");
+
+          setStatus("Debate generated successfully!", "status-success");
+
+          outputSection.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+
+        async function generateDebate(productIdea, personas) {
+          try {
+            if (typeof CONFIG_KEYS === "undefined" || !CONFIG_KEYS || !CONFIG_KEYS.OPENAI_API_KEY) {
+              setStatus(
+                "API key not configured. Open config-keys.js and paste your OpenAI API key.",
+                "status-error"
+              );
+              return;
+            }
+
+            if (CONFIG_KEYS.OPENAI_API_KEY.includes("paste-your-openai-api-key-here")) {
+              setStatus(
+                "API key not configured. Open config-keys.js and paste your OpenAI API key.",
+                "status-error"
+              );
+              return;
+            }
+
+            runBtn.disabled = true;
+            setStatus("Generating debate... this takes 15-30 seconds", "status-loading");
+
+            const personaDescriptions = personas
+              .map(
+                (p, index) =>
+                  `Persona ${index + 1}: ${p.name} — ${p.description || "No additional description provided."}`
+              )
+              .join("\n");
+
+            const systemPrompt =
+              "You are simulating a focus group discussion about a product idea. There are 5 participants. Each participant must speak at least 3 times. They should DISAGREE with each other, challenge assumptions, raise concerns, and occasionally agree. Make the debate feel natural and heated. After the debate, provide a SYNTHESIS section.\n\n" +
+              "Here are the personas you are roleplaying as:\n" +
+              personaDescriptions +
+              "\n\n" +
+              "Format your response EXACTLY like this:\n" +
+              "[PersonaName1]: Their first comment...\n" +
+              "[PersonaName2]: Their response...\n" +
+              "(continue for at least 15 exchanges total)\n\n" +
+              "===SYNTHESIS===\n" +
+              "**Key Tensions:** (list 2-3 main disagreements)\n" +
+              "**Top Objections:** (list 3-4 specific concerns raised)\n" +
+              "**Surprising Insights:** (list 2-3 unexpected points)\n" +
+              "**Overall Verdict:** (one paragraph summary)";
+
+            const body = {
+              model: CONFIG.OPENAI_MODEL,
+              instructions: systemPrompt,
+              input: "Product idea: " + productIdea,
+              max_output_tokens: 4000,
+            };
+
+            let response;
+            try {
+              response = await fetch(CONFIG.OPENAI_ENDPOINT, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: "Bearer " + CONFIG_KEYS.OPENAI_API_KEY,
+                },
+                body: JSON.stringify(body),
+              });
+            } catch (networkError) {
+              console.error("Debate generation failed:", networkError);
+              setStatus(
+                "Network error — check your internet connection and try again.",
+                "status-error"
+              );
+              return;
+            }
+
+            let data;
+            try {
+              data = await response.json();
+            } catch (parseError) {
+              throw new Error("Unable to parse response from API.");
+            }
+
+            if (!response.ok) {
+              const errorMessage =
+                (data && (data.error?.message || data.message)) || "Unknown error from API";
+              throw new Error("API error (" + response.status + "): " + errorMessage);
+            }
+
+            let textOutput = "";
+            if (Array.isArray(data.output)) {
+              for (const item of data.output) {
+                if (item && item.type === "message" && Array.isArray(item.content)) {
+                  for (const contentPart of item.content) {
+                    if (
+                      contentPart &&
+                      (contentPart.type === "output_text" || contentPart.type === "text") &&
+                      contentPart.text
+                    ) {
+                      if (typeof contentPart.text === "string") {
+                        textOutput += (textOutput ? "\n" : "") + contentPart.text;
+                      } else if (typeof contentPart.text.value === "string") {
+                        textOutput += (textOutput ? "\n" : "") + contentPart.text.value;
+                      }
+                    }
+                  }
+                }
+              }
+            }
+
+            if (!textOutput && data.output && data.output[0] && data.output[0].content) {
+              const maybeText = data.output[0].content[0]?.text;
+              if (typeof maybeText === "string") {
+                textOutput = maybeText;
+              } else if (maybeText && typeof maybeText.value === "string") {
+                textOutput = maybeText.value;
+              }
+            }
+
+            if (!textOutput) {
+              throw new Error("No text output found in model response.");
+            }
+
+            const separator = "===SYNTHESIS===";
+            const parts = textOutput.split(separator);
+            const debateText = parts[0] || "";
+            const synthesisText = parts[1] || "";
+
+            displayDebate(debateText, synthesisText);
+            saveRun(productIdea, personas, debateText, synthesisText);
+          } catch (error) {
+            console.error("Debate generation failed:", error);
+            if (
+              error &&
+              typeof error.message === "string" &&
+              /network error|failed to fetch/i.test(error.message)
+            ) {
+              setStatus(
+                "Network error — check your internet connection and try again.",
+                "status-error"
+              );
+            } else {
+              setStatus(error.message || "Unexpected error during debate generation.", "status-error");
+            }
+          } finally {
+            runBtn.disabled = false;
+          }
+        }
+
+        function getStoredRuns() {
+          try {
+            const raw = localStorage.getItem("focusGroupRuns");
+            if (!raw) return [];
+            const parsed = JSON.parse(raw);
+            if (!Array.isArray(parsed)) return [];
+            return parsed;
+          } catch (err) {
+            console.error("Failed to read saved runs from storage:", err);
+            return [];
+          }
+        }
+
+        function saveRun(productIdea, personas, debateText, synthesisText) {
+          const run = {
+            id: Date.now(),
+            timestamp: new Date().toISOString(),
+            productIdea,
+            personas,
+            debateText,
+            synthesisText,
+          };
+
+          try {
+            const existing = getStoredRuns();
+            existing.unshift(run);
+
+            const maxRuns =
+              (typeof CONFIG !== "undefined" &&
+                CONFIG &&
+                typeof CONFIG.MAX_SAVED_RUNS === "number" &&
+                CONFIG.MAX_SAVED_RUNS) ||
+              20;
+
+            if (existing.length > maxRuns) {
+              existing.length = maxRuns;
+            }
+
+            localStorage.setItem("focusGroupRuns", JSON.stringify(existing));
+            refreshHistory();
+          } catch (err) {
+            console.warn("Failed to save focus group run:", err);
+            setStatus(
+              "Note: Could not save this run (storage full). Consider clearing old simulations.",
+              null
+            );
+          }
+        }
+
+        function refreshHistory() {
+          if (!historyList) return;
+
+          let runs = [];
+          try {
+            runs = getStoredRuns();
+          } catch (err) {
+            console.error("Failed to refresh history from storage:", err);
+            runs = [];
+          }
+
+          historyList.innerHTML = "";
+
+          if (!runs.length) {
+            const empty = document.createElement("li");
+            empty.textContent = "No saved simulations yet.";
+            empty.style.fontSize = "12px";
+            empty.style.color = "#9ca3af";
+            historyList.appendChild(empty);
+            return;
+          }
+
+          runs.forEach((run) => {
+            const li = document.createElement("li");
+            li.className = "history-item";
+
+            const ideaPreview = (run.productIdea || "").trim();
+            const truncated =
+              ideaPreview.length > 60 ? ideaPreview.slice(0, 57).trimEnd() + "..." : ideaPreview;
+
+            let formattedDate = "";
+            try {
+              const date = new Date(run.timestamp);
+              formattedDate = date.toLocaleString(undefined, {
+                month: "short",
+                day: "numeric",
+                hour: "numeric",
+                minute: "2-digit",
+              });
+            } catch {
+              formattedDate = run.timestamp || "";
+            }
+
+            li.textContent = truncated || "(Untitled idea)";
+            if (formattedDate) {
+              li.textContent += " — " + formattedDate;
+            }
+
+            li.style.cursor = "pointer";
+
+            li.addEventListener("click", function () {
+              loadRun(run);
+            });
+
+            historyList.appendChild(li);
+          });
+        }
+
+        function loadRun(run) {
+          if (!run) return;
+          ideaInput.value = run.productIdea || "";
+          displayDebate(run.debateText || "", run.synthesisText || "");
+          showLoadedBadge();
+          outputSection.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+
+        let recognition = null;
+        let isListening = false;
+
+        function stopVoiceInput(clearStatus = true) {
+          try {
+            if (recognition && isListening) {
+              recognition.stop();
+            }
+          } catch (err) {
+            console.error("Failed to stop voice input:", err);
+          }
+          isListening = false;
+          if (micBtn) {
+            micBtn.classList.remove("mic-active");
+          }
+          if (clearStatus) {
+            setStatus("", null);
+          }
+        }
+
+        function startVoiceInput() {
+          if (!recognition) return;
+          try {
+            recognition.start();
+            isListening = true;
+            if (micBtn) {
+              micBtn.classList.add("mic-active");
+            }
+            setStatus("Listening... speak your product idea", "status-loading");
+          } catch (err) {
+            console.error("Failed to start voice input:", err);
+            setStatus("Voice input could not be started.", "status-error");
+          }
+        }
+
+        personaToggleBtn.addEventListener("click", function () {
+          togglePersonaPanel();
+        });
+
+        runBtn.addEventListener("click", function () {
+          const idea = ideaInput.value.trim();
+
+          if (!idea) {
+            setStatus("Please enter a product idea first.", "status-error");
+            return;
+          }
+
+          const personas = getPersonas();
+          generateDebate(idea, personas);
+        });
+
+        if (micBtn) {
+          micBtn.addEventListener("click", function () {
+            try {
+              const SpeechRecognition =
+                window.SpeechRecognition || window.webkitSpeechRecognition;
+
+              if (!SpeechRecognition) {
+                alert(
+                  "Voice input is not supported in this browser. Please use Chrome or Edge."
+                );
+                return;
+              }
+
+              if (!recognition) {
+                recognition = new SpeechRecognition();
+                recognition.continuous = true;
+                recognition.interimResults = true;
+                recognition.lang = "en-US";
+
+                recognition.onresult = function (event) {
+                  try {
+                    let finalTranscript = "";
+                    for (let i = event.resultIndex; i < event.results.length; i++) {
+                      const result = event.results[i];
+                      if (result.isFinal && result[0] && result[0].transcript) {
+                        finalTranscript += result[0].transcript;
+                      }
+                    }
+                    if (finalTranscript) {
+                      const current = ideaInput.value || "";
+                      const separator =
+                        current && !/\s$/.test(current) ? current + " " : current;
+                      ideaInput.value = separator + finalTranscript.trim();
+                    }
+                  } catch (err) {
+                    console.error("Error processing voice input result:", err);
+                  }
+                };
+
+                recognition.onerror = function (event) {
+                  console.error("Speech recognition error:", event);
+                  let message = "Voice input error. Please try again.";
+                  if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+                    message =
+                      "Microphone permission was denied. Please enable access in your browser settings.";
+                  } else if (event.error === "network") {
+                    message =
+                      "Network error during voice input. Check your connection and try again.";
+                  } else if (event.error === "no-speech") {
+                    message = "No speech detected. Try speaking more clearly or closer to the mic.";
+                  }
+                  setStatus(message, "status-error");
+                  stopVoiceInput(false);
+                };
+
+                recognition.onend = function () {
+                  if (isListening) {
+                    stopVoiceInput(false);
+                  }
+                };
+              }
+
+              if (isListening) {
+                stopVoiceInput();
+              } else {
+                startVoiceInput();
+              }
+            } catch (err) {
+              console.error("Voice input setup failed:", err);
+              setStatus(
+                "Voice input error. Please try typing your idea instead.",
+                "status-error"
+              );
+              if (micBtn) {
+                micBtn.classList.remove("mic-active");
+              }
+              isListening = false;
+            }
+          });
+        }
+
+        if (clearHistoryBtn) {
+          clearHistoryBtn.addEventListener("click", function () {
+            const shouldClear = confirm("Clear all saved simulations?");
+            if (!shouldClear) return;
+
+            try {
+              localStorage.removeItem("focusGroupRuns");
+            } catch (err) {
+              console.error("Failed to clear history from storage:", err);
+            }
+
+            refreshHistory();
+          });
+        }
+
+        refreshHistory();
+      })();
+    </script>
+  </body>
+</html>
+
